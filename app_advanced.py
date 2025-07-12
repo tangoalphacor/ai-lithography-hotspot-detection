@@ -249,102 +249,311 @@ if not CONFIG_AVAILABLE:
     
     def create_basic_test_image_generator():
         st.subheader("🎨 Enhanced Demo Pattern Generator")
-        st.info("🔄 **Demo Mode Active** - Generate test patterns to explore the application's functionality")
+        st.info("🔄 **Demo Mode Active** - Generate and test patterns instantly!")
         
-        col1, col2 = st.columns(2)
+        # Enhanced configuration section
+        col1, col2, col3 = st.columns(3)
         
         with col1:
             pattern_type = st.selectbox(
                 "Pattern Type",
-                ["Grid with Hotspot", "Circuit Layout", "Random Pattern", "Gradient Test"]
+                ["Grid with Hotspot", "Circuit Layout", "Random Pattern", "Gradient Test", "Mixed Patterns"]
             )
             
-            size = st.selectbox("Image Size", [300, 400, 500], index=0)
+            size = st.selectbox("Image Size", [300, 400, 500], index=1)
             
         with col2:
-            hotspot_count = st.slider("Simulated Hotspots", 1, 5, 2)
+            hotspot_count = st.slider("Simulated Hotspots", 1, 8, 3)
             noise_level = st.slider("Noise Level", 0.0, 0.3, 0.1)
+            
+        with col3:
+            # New batch generation options
+            batch_size = st.slider("Number of Samples", 1, 10, 3, help="Generate multiple test images at once")
+            auto_process = st.checkbox("Auto-Process Generated Images", value=True, help="Automatically run AI detection on generated samples")
         
-        if st.button("🎨 Generate Enhanced Test Pattern"):
-            from PIL import Image as PILImage, ImageDraw
-            import random
+        # Advanced pattern options
+        with st.expander("🔧 Advanced Pattern Options", expanded=False):
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                complexity = st.slider("Pattern Complexity", 1, 5, 3, help="Controls detail level and number of elements")
+                color_variation = st.checkbox("Color Variation", value=True, help="Add color diversity to patterns")
+                
+            with col2:
+                random_seed = st.number_input("Random Seed (optional)", value=0, help="Use same seed for reproducible patterns")
+                include_defects = st.checkbox("Include Realistic Defects", value=True, help="Add manufacturing-like imperfections")
+        
+        # Generation buttons
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            generate_single = st.button("🎨 Generate Single Pattern", use_container_width=True)
+            
+        with col2:
+            generate_batch = st.button(f"🚀 Generate {batch_size} Samples", use_container_width=True)
+            
+        with col3:
+            generate_and_test = st.button(f"⚡ Generate & Test {batch_size} Samples", use_container_width=True)
+        
+        # Initialize session state for generated images
+        if 'generated_test_images' not in st.session_state:
+            st.session_state.generated_test_images = []
+        
+        def create_pattern_image(pattern_type, size, hotspot_count, noise_level, complexity, color_variation, include_defects, seed=None):
+            """Create a single pattern image with enhanced options"""
+            if seed is not None and seed > 0:
+                random.seed(seed)
+            
+            from PIL import Image as PILImage, ImageDraw, ImageFilter
             
             # Create base image
-            img = PILImage.new('RGB', (size, size), 'black')
+            base_color = 'black' if not color_variation else random.choice(['black', '#1a1a1a', '#0a0a0a'])
+            img = PILImage.new('RGB', (size, size), base_color)
             draw = ImageDraw.Draw(img)
             
             if pattern_type == "Grid with Hotspot":
-                # Draw grid pattern
-                grid_spacing = size // 15
+                # Enhanced grid with variable spacing
+                grid_spacing = size // (10 + complexity * 2)
+                line_color = 'white' if not color_variation else random.choice(['white', '#cccccc', '#e0e0e0'])
+                
                 for i in range(0, size, grid_spacing):
-                    draw.line([(i, 0), (i, size)], fill='white', width=1)
-                    draw.line([(0, i), (size, i)], fill='white', width=1)
+                    width = 1 if complexity <= 2 else random.choice([1, 2])
+                    draw.line([(i, 0), (i, size)], fill=line_color, width=width)
+                    draw.line([(0, i), (size, i)], fill=line_color, width=width)
+                
+                # Add variable hotspots
+                for _ in range(hotspot_count):
+                    x = random.randint(size//4, 3*size//4)
+                    y = random.randint(size//4, 3*size//4)
+                    radius = random.randint(6 + complexity, 12 + complexity * 2)
+                    
+                    hotspot_color = 'red' if not color_variation else random.choice(['red', '#ff4444', '#ff6666'])
+                    outline_color = 'yellow' if not color_variation else random.choice(['yellow', '#ffff44', '#ffdd44'])
+                    
+                    draw.ellipse([x-radius, y-radius, x+radius, y+radius], 
+                               fill=hotspot_color, outline=outline_color, width=2)
+                    
+            elif pattern_type == "Circuit Layout":
+                # Enhanced circuit with realistic traces
+                trace_count = 15 + complexity * 5
+                for _ in range(trace_count):
+                    x1, y1 = random.randint(0, size), random.randint(0, size)
+                    x2, y2 = random.randint(0, size), random.randint(0, size)
+                    
+                    trace_color = 'gray' if not color_variation else random.choice(['gray', '#888888', '#aaaaaa'])
+                    width = random.choice([1, 2, 3]) if complexity > 2 else 2
+                    
+                    draw.line([(x1, y1), (x2, y2)], fill=trace_color, width=width)
+                
+                # Add connection points/pads
+                for _ in range(hotspot_count):
+                    x = random.randint(20, size-20)
+                    y = random.randint(20, size-20)
+                    pad_size = random.randint(4, 8 + complexity)
+                    
+                    pad_color = 'orange' if not color_variation else random.choice(['orange', '#ff8800', '#ffaa00'])
+                    outline_color = 'red' if not color_variation else random.choice(['red', '#ff4444'])
+                    
+                    draw.rectangle([x-pad_size, y-pad_size, x+pad_size, y+pad_size], 
+                                 fill=pad_color, outline=outline_color)
+                    
+            elif pattern_type == "Random Pattern":
+                # Enhanced random patterns
+                shape_count = 20 + complexity * 10
+                for _ in range(shape_count):
+                    x, y = random.randint(0, size), random.randint(0, size)
+                    w, h = random.randint(3, 15 + complexity * 3), random.randint(3, 15 + complexity * 3)
+                    
+                    if color_variation:
+                        color = random.choice(['white', 'gray', 'lightgray', '#cccccc', '#e0e0e0'])
+                    else:
+                        color = random.choice(['white', 'gray', 'lightgray'])
+                    
+                    shape_type = random.choice(['rectangle', 'ellipse'])
+                    if shape_type == 'rectangle':
+                        draw.rectangle([x, y, x+w, y+h], fill=color)
+                    else:
+                        draw.ellipse([x, y, x+w, y+h], fill=color)
+                
+                # Add hotspots
+                for _ in range(hotspot_count):
+                    x = random.randint(10, size-10)
+                    y = random.randint(10, size-10)
+                    radius = random.randint(4, 8 + complexity)
+                    draw.ellipse([x-radius, y-radius, x+radius, y+radius], fill='red')
+                    
+            elif pattern_type == "Gradient Test":
+                # Create gradient background with features
+                from PIL import ImageDraw
+                
+                # Create gradient effect
+                for y in range(size):
+                    intensity = int(255 * (y / size))
+                    color = (intensity // 3, intensity // 3, intensity // 3)
+                    draw.line([(0, y), (size, y)], fill=color)
+                
+                # Add geometric patterns
+                step = size // (5 + complexity)
+                for i in range(0, size, step):
+                    for j in range(0, size, step):
+                        if random.random() > 0.7:
+                            pattern_color = 'white' if not color_variation else random.choice(['white', '#cccccc'])
+                            draw.rectangle([i, j, i+step//2, j+step//2], fill=pattern_color)
                 
                 # Add hotspots
                 for _ in range(hotspot_count):
                     x = random.randint(size//4, 3*size//4)
                     y = random.randint(size//4, 3*size//4)
                     radius = random.randint(8, 15)
+                    draw.ellipse([x-radius, y-radius, x+radius, y+radius], fill='red', outline='yellow', width=2)
                     
-                    draw.ellipse([x-radius, y-radius, x+radius, y+radius], 
-                               fill='red', outline='yellow', width=2)
-                    
-            elif pattern_type == "Circuit Layout":
-                # Simulate circuit traces
-                for _ in range(20):
-                    x1, y1 = random.randint(0, size), random.randint(0, size)
-                    x2, y2 = random.randint(0, size), random.randint(0, size)
-                    draw.line([(x1, y1), (x2, y2)], fill='gray', width=2)
+            elif pattern_type == "Mixed Patterns":
+                # Combine multiple pattern types
+                patterns = ["Grid with Hotspot", "Circuit Layout", "Random Pattern"]
+                selected_patterns = random.sample(patterns, random.randint(2, 3))
                 
-                # Add connection points
-                for _ in range(hotspot_count):
-                    x = random.randint(20, size-20)
-                    y = random.randint(20, size-20)
-                    draw.rectangle([x-5, y-5, x+5, y+5], fill='orange', outline='red')
-                    
-            elif pattern_type == "Random Pattern":
-                # Random shapes and potential hotspots
-                for _ in range(30):
+                for pattern in selected_patterns:
+                    # Create sub-pattern with reduced intensity
+                    temp_img = create_pattern_image(pattern, size, hotspot_count//len(selected_patterns), 
+                                                  noise_level, complexity, color_variation, include_defects)
+                    # Blend with main image
+                    img = PILImage.blend(img.convert('RGB'), temp_img.convert('RGB'), 0.5)
+                    draw = ImageDraw.Draw(img)
+            
+            # Add realistic defects if enabled
+            if include_defects:
+                # Add dust particles
+                for _ in range(random.randint(0, complexity * 3)):
                     x, y = random.randint(0, size), random.randint(0, size)
-                    w, h = random.randint(5, 20), random.randint(5, 20)
-                    color = random.choice(['white', 'gray', 'lightgray'])
-                    draw.rectangle([x, y, x+w, y+h], fill=color)
+                    dust_size = random.randint(1, 3)
+                    dust_color = '#444444' if color_variation else 'gray'
+                    draw.ellipse([x, y, x+dust_size, y+dust_size], fill=dust_color)
                 
-                for _ in range(hotspot_count):
-                    x = random.randint(10, size-10)
-                    y = random.randint(10, size-10)
-                    draw.ellipse([x-6, y-6, x+6, y+6], fill='red')
+                # Add scratches
+                for _ in range(random.randint(0, complexity)):
+                    x1, y1 = random.randint(0, size), random.randint(0, size)
+                    x2 = x1 + random.randint(-20, 20)
+                    y2 = y1 + random.randint(-20, 20)
+                    scratch_color = '#222222' if color_variation else 'darkgray'
+                    draw.line([(x1, y1), (x2, y2)], fill=scratch_color, width=1)
             
             # Add noise if requested
             if noise_level > 0:
-                # Simple noise simulation by adding random pixels
                 pixels = list(img.getdata())
                 noisy_pixels = []
                 for pixel in pixels:
                     if random.random() < noise_level:
-                        # Add noise
                         noise = random.randint(-30, 30)
                         new_pixel = tuple(max(0, min(255, c + noise)) for c in pixel)
                         noisy_pixels.append(new_pixel)
                     else:
                         noisy_pixels.append(pixel)
-                
                 img.putdata(noisy_pixels)
             
-            # Display the generated image
-            st.image(img, caption=f"Generated {pattern_type} ({size}x{size})", width=min(size, 400))
+            return img
+        
+        # Handle generation actions
+        images_to_display = []
+        images_to_process = []
+        
+        if generate_single or generate_batch or generate_and_test:
+            num_images = 1 if generate_single else batch_size
             
-            # Show pattern statistics
-            col1, col2, col3 = st.columns(3)
+            with st.spinner(f"🎨 Generating {num_images} test pattern{'s' if num_images > 1 else ''}..."):
+                progress_bar = st.progress(0)
+                
+                for i in range(num_images):
+                    # Use different seeds for variety in batch generation
+                    seed = random_seed if random_seed > 0 else None
+                    if num_images > 1 and seed:
+                        seed += i
+                    
+                    img = create_pattern_image(
+                        pattern_type, size, hotspot_count, noise_level, 
+                        complexity, color_variation, include_defects, seed
+                    )
+                    
+                    images_to_display.append(img)
+                    images_to_process.append(img)
+                    
+                    progress_bar.progress((i + 1) / num_images)
+                
+                # Store generated images in session state
+                st.session_state.generated_test_images = images_to_process
+                
+                st.success(f"✅ Successfully generated {num_images} test pattern{'s' if num_images > 1 else ''}!")
+        
+        # Display generated images
+        if images_to_display:
+            st.markdown("### 📸 Generated Test Patterns")
+            
+            if len(images_to_display) == 1:
+                # Single image display
+                col1, col2, col3 = st.columns([1, 2, 1])
+                with col2:
+                    st.image(images_to_display[0], caption=f"Generated {pattern_type} ({size}x{size})", width=min(size, 400))
+            else:
+                # Multiple images display
+                cols_per_row = 3
+                for i in range(0, len(images_to_display), cols_per_row):
+                    cols = st.columns(cols_per_row)
+                    for j, img in enumerate(images_to_display[i:i+cols_per_row]):
+                        with cols[j]:
+                            st.image(img, caption=f"Pattern {i+j+1}", use_column_width=True)
+            
+            # Show generation statistics
+            col1, col2, col3, col4 = st.columns(4)
             with col1:
                 st.metric("Pattern Type", pattern_type)
             with col2:
-                st.metric("Simulated Hotspots", hotspot_count)
+                st.metric("Generated Samples", len(images_to_display))
             with col3:
+                st.metric("Simulated Hotspots", hotspot_count)
+            with col4:
                 st.metric("Image Size", f"{size}x{size}")
+        
+        # Auto-processing or manual testing options
+        if st.session_state.generated_test_images:
+            st.markdown("### 🚀 Test Generated Patterns")
             
-            st.success("✅ Test pattern generated! Upload this image to test the AI detection system.")
-            st.info("💡 **Tip**: Right-click the image above and 'Save image as...' to download it for testing.")
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                if st.button("🔍 Run AI Detection", use_container_width=True):
+                    st.session_state.auto_test_images = True
+                    st.rerun()
+            
+            with col2:
+                if st.button("🔄 Generate New Batch", use_container_width=True):
+                    st.session_state.generated_test_images = []
+                    st.rerun()
+            
+            with col3:
+                if st.button("📋 View in Main App", use_container_width=True):
+                    st.session_state.page_override = "🔬 Main App"
+                    st.session_state.demo_images_ready = True
+                    st.rerun()
+            
+            # Auto-process if requested
+            if generate_and_test or (auto_process and (generate_batch or generate_single)):
+                st.session_state.auto_test_images = True
+                st.rerun()
+        else:
+            st.markdown("### 💡 Getting Started")
+            st.markdown("""
+            **🎯 Quick Start Options:**
+            1. **Single Pattern**: Generate one test image to examine
+            2. **Batch Generation**: Create multiple samples at once
+            3. **Generate & Test**: Automatically run AI detection on generated patterns
+            
+            **🔧 Advanced Features:**
+            - Adjust pattern complexity and visual variations
+            - Include realistic manufacturing defects
+            - Use random seeds for reproducible results
+            - Mix multiple pattern types for complex scenarios
+            """)
+        
+        return images_to_process if 'images_to_process' in locals() else []
 
 # Configure logging
 import os
@@ -509,6 +718,12 @@ class AdvancedLithographyHotspotApp:
             st.session_state.page_override = None
         if 'show_private_explanation' not in st.session_state:
             st.session_state.show_private_explanation = False
+        if 'generated_test_images' not in st.session_state:
+            st.session_state.generated_test_images = []
+        if 'auto_test_images' not in st.session_state:
+            st.session_state.auto_test_images = False
+        if 'demo_images_ready' not in st.session_state:
+            st.session_state.demo_images_ready = False
         if 'advanced_settings' not in st.session_state:
             st.session_state.advanced_settings = {
                 'enable_gpu': False,
@@ -1417,6 +1632,94 @@ class AdvancedLithographyHotspotApp:
             </div>
             """, unsafe_allow_html=True)
         
+        # Check for auto-testing of generated images
+        if st.session_state.get('auto_test_images', False) and st.session_state.get('generated_test_images', []):
+            st.markdown("## 🚀 Auto-Testing Generated Patterns")
+            st.info("🎯 **Processing generated test patterns through AI pipeline...**")
+            
+            generated_images = st.session_state.generated_test_images
+            
+            with st.spinner(f"🔄 Processing {len(generated_images)} generated images through advanced AI pipeline..."):
+                results = self.process_advanced_pipeline(generated_images, config)
+            
+            # Store results in session state
+            st.session_state.processed_images.extend(results)
+            
+            # Clear the auto-test flag
+            st.session_state.auto_test_images = False
+            
+            # Display results
+            st.success(f"✅ Successfully processed {len(generated_images)} generated test patterns!")
+            self.render_advanced_results(results, config)
+            
+            # Option to generate more samples
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                if st.button("🎨 Generate More Samples", key="generate_more"):
+                    st.session_state.page_override = "🎨 Test Image Generator"
+                    st.rerun()
+            
+            with col2:
+                if st.button("📊 View Analytics", key="view_analytics"):
+                    st.session_state.page_override = "📊 Analytics Dashboard"
+                    st.rerun()
+                    
+            with col3:
+                if st.button("🔄 Clear Results", key="clear_results"):
+                    st.session_state.processed_images = []
+                    st.session_state.generated_test_images = []
+                    st.rerun()
+            
+            st.markdown("---")
+        
+        # Check for demo images ready from test generator
+        elif st.session_state.get('demo_images_ready', False) and st.session_state.get('generated_test_images', []):
+            st.markdown("## 🎨 Generated Test Patterns Ready")
+            st.success(f"✅ {len(st.session_state.generated_test_images)} test patterns generated and ready for processing!")
+            
+            generated_images = st.session_state.generated_test_images
+            
+            # Show preview of generated images
+            st.markdown("### 📸 Generated Images Preview")
+            preview_cols = st.columns(min(len(generated_images), 4))
+            for i, image in enumerate(generated_images[:4]):
+                with preview_cols[i]:
+                    st.image(image, caption=f"Generated Pattern {i+1}", use_column_width=True)
+            
+            if len(generated_images) > 4:
+                st.info(f"Showing 4 of {len(generated_images)} generated images")
+            
+            # Processing options
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                if st.button("🚀 Process Generated Images", key="process_generated"):
+                    with st.spinner("🔄 Processing generated images through advanced AI pipeline..."):
+                        results = self.process_advanced_pipeline(generated_images, config)
+                    
+                    # Store results in session state
+                    st.session_state.processed_images.extend(results)
+                    
+                    # Clear the demo flag
+                    st.session_state.demo_images_ready = False
+                    
+                    # Display results
+                    self.render_advanced_results(results, config)
+            
+            with col2:
+                if st.button("🎨 Generate Different Patterns", key="generate_different"):
+                    st.session_state.page_override = "🎨 Test Image Generator"
+                    st.session_state.demo_images_ready = False
+                    st.rerun()
+                    
+            with col3:
+                if st.button("❌ Clear Generated Images", key="clear_generated"):
+                    st.session_state.generated_test_images = []
+                    st.session_state.demo_images_ready = False
+                    st.rerun()
+            
+            st.markdown("---")
+        
         # Main processing area
         if config.get('uploaded_files'):
             st.markdown("## 🚀 Processing Pipeline")
@@ -1585,6 +1888,105 @@ class AdvancedLithographyHotspotApp:
                 if st.button("📋 About", key="about_access"):
                     st.session_state.page_override = "📋 About & Info"
                     st.rerun()
+            
+            st.markdown("---")
+            
+            # Quick demo section
+            st.markdown("### ⚡ Quick Demo")
+            st.markdown("**Try the AI detection system instantly with auto-generated test patterns!**")
+            
+            demo_col1, demo_col2, demo_col3 = st.columns(3)
+            
+            with demo_col1:
+                if st.button("🚀 Quick Test (1 Sample)", key="quick_test_1", use_container_width=True):
+                    # Generate and auto-test a single sample
+                    from PIL import Image as PILImage, ImageDraw
+                    import random
+                    
+                    # Quick pattern generation
+                    size = 400
+                    img = PILImage.new('RGB', (size, size), 'black')
+                    draw = ImageDraw.Draw(img)
+                    
+                    # Create grid with hotspot
+                    grid_spacing = size // 15
+                    for i in range(0, size, grid_spacing):
+                        draw.line([(i, 0), (i, size)], fill='white', width=1)
+                        draw.line([(0, i), (size, i)], fill='white', width=1)
+                    
+                    # Add hotspot
+                    x, y = random.randint(size//3, 2*size//3), random.randint(size//3, 2*size//3)
+                    radius = random.randint(10, 15)
+                    draw.ellipse([x-radius, y-radius, x+radius, y+radius], fill='red', outline='yellow', width=2)
+                    
+                    st.session_state.generated_test_images = [img]
+                    st.session_state.auto_test_images = True
+                    st.rerun()
+            
+            with demo_col2:
+                if st.button("🔥 Batch Test (3 Samples)", key="quick_test_3", use_container_width=True):
+                    # Generate and auto-test three samples
+                    import random
+                    from PIL import Image as PILImage, ImageDraw
+                    
+                    images = []
+                    patterns = ["Grid with Hotspot", "Circuit Layout", "Random Pattern"]
+                    
+                    for i, pattern in enumerate(patterns):
+                        size = 400
+                        img = PILImage.new('RGB', (size, size), 'black')
+                        draw = ImageDraw.Draw(img)
+                        
+                        if pattern == "Grid with Hotspot":
+                            grid_spacing = size // 15
+                            for j in range(0, size, grid_spacing):
+                                draw.line([(j, 0), (j, size)], fill='white', width=1)
+                                draw.line([(0, j), (size, j)], fill='white', width=1)
+                            # Add hotspots
+                            for _ in range(2):
+                                x, y = random.randint(size//4, 3*size//4), random.randint(size//4, 3*size//4)
+                                radius = random.randint(8, 12)
+                                draw.ellipse([x-radius, y-radius, x+radius, y+radius], fill='red', outline='yellow', width=2)
+                        
+                        elif pattern == "Circuit Layout":
+                            # Circuit traces
+                            for _ in range(25):
+                                x1, y1 = random.randint(0, size), random.randint(0, size)
+                                x2, y2 = random.randint(0, size), random.randint(0, size)
+                                draw.line([(x1, y1), (x2, y2)], fill='gray', width=2)
+                            # Add connection points
+                            for _ in range(3):
+                                x, y = random.randint(20, size-20), random.randint(20, size-20)
+                                draw.rectangle([x-6, y-6, x+6, y+6], fill='orange', outline='red')
+                        
+                        elif pattern == "Random Pattern":
+                            # Random shapes
+                            for _ in range(40):
+                                x, y = random.randint(0, size), random.randint(0, size)
+                                w, h = random.randint(5, 25), random.randint(5, 25)
+                                color = random.choice(['white', 'gray', 'lightgray'])
+                                draw.rectangle([x, y, x+w, y+h], fill=color)
+                            # Add hotspots
+                            for _ in range(2):
+                                x, y = random.randint(10, size-10), random.randint(10, size-10)
+                                draw.ellipse([x-8, y-8, x+8, y+8], fill='red')
+                        
+                        images.append(img)
+                    
+                    st.session_state.generated_test_images = images
+                    st.session_state.auto_test_images = True
+                    st.rerun()
+            
+            with demo_col3:
+                if st.button("🎨 Custom Generator", key="custom_generator", use_container_width=True):
+                    st.session_state.page_override = "🎨 Test Image Generator"
+                    st.rerun()
+            
+            st.markdown("**💡 Quick Demo Features:**")
+            st.markdown("- **Instant Testing**: Generate and process images with one click")
+            st.markdown("- **Realistic Patterns**: Grid layouts, circuit designs, and random structures")  
+            st.markdown("- **Immediate Results**: See AI predictions, confidence scores, and visualizations")
+            st.markdown("- **No Downloads**: Everything happens in the browser instantly")
             
             st.markdown("---")
     
