@@ -1,0 +1,12 @@
+# For Google Cloud deployment
+runtime: python311
+
+env_variables:
+  STREAMLIT_SERVER_MAX_UPLOAD_SIZE: 50
+  STREAMLIT_THEME_PRIMARY_COLOR: "#FF6B6B"
+  STREAMLIT_THEME_BACKGROUND_COLOR: "#FFFFFF"
+
+automatic_scaling:
+  min_instances: 1
+  max_instances: 10
+  target_cpu_utilization: 0.6

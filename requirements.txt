@@ -1,0 +1,59 @@
+# Requirements for the AI Lithography Hotspot Detection Application
+# Core web framework
+streamlit>=1.46.1
+
+# Deep Learning and AI
+torch>=2.0.0
+torchvision>=0.15.0
+transformers>=4.30.0
+
+# Computer Vision and Image Processing
+opencv-python>=4.8.0
+Pillow>=10.0.0
+scikit-image>=0.21.0
+mahotas>=1.4.13
+
+# Scientific Computing
+numpy>=1.24.0
+scipy>=1.11.0
+pandas>=2.0.0
+
+# Machine Learning
+scikit-learn>=1.3.0
+xgboost>=1.7.0
+lightgbm>=4.0.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.15.0
+
+# Image processing and augmentation
+albumentations>=1.3.0
+imageio>=2.31.0
+
+# UI and styling
+streamlit-option-menu>=0.3.6
+streamlit-theme>=1.0.0
+extra-streamlit-components>=0.1.60
+
+# Utilities
+requests>=2.31.0
+tqdm>=4.65.0
+python-dotenv>=1.0.0
+pyyaml>=6.0
+psutil>=5.9.0
+
+# Model serialization
+joblib>=1.3.0
+
+# Progress tracking
+rich>=13.0.0
+
+# Additional dependencies for advanced features
+timm>=0.9.0  # PyTorch Image Models
+
+# Development and testing
+pytest>=7.4.0
+black>=23.7.0
+flake8>=6.0.0
