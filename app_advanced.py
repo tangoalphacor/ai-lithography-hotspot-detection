@@ -222,9 +222,10 @@ class AdvancedLithographyHotspotApp:
                         st.session_state.model_cache['gradcam_visualizer'] = get_gradcam_visualizer()
                     
                     if 'image_processor' not in st.session_state.model_cache:
-                        st.session_state.model_cache['image_processor'] = get_image_processor(
-                            enable_gpu=st.session_state.advanced_settings['enable_gpu']
-                        )
+                        config = {
+                            'enable_gpu': st.session_state.advanced_settings.get('enable_gpu', False)
+                        }
+                        st.session_state.model_cache['image_processor'] = get_image_processor(config)
                 
                 st.success("✅ Advanced AI models loaded successfully!")
                 self.models_loaded = True
@@ -240,7 +241,18 @@ class AdvancedLithographyHotspotApp:
                 
         except Exception as e:
             st.error(f"❌ Error loading models: {str(e)}")
-            self.models_loaded = False
+            st.info("🔄 Attempting to load basic functionality...")
+            try:
+                # Try fallback models
+                self.cyclegan_processor = CycleGANProcessor()
+                self.hotspot_classifier = HotspotClassifier()
+                self.gradcam_visualizer = GradCAMVisualizer()
+                self.image_processor = ImageProcessor()
+                self.models_loaded = True
+                st.warning("⚠️ Using basic models. Some advanced features may be limited.")
+            except Exception as fallback_error:
+                st.error(f"Failed to load any models: {str(fallback_error)}")
+                self.models_loaded = False
     
     def setup_processing_pipeline(self):
         """Setup advanced processing pipeline"""
