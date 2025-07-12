@@ -202,6 +202,8 @@ class AdvancedLithographyHotspotApp:
             st.session_state.model_cache = {}
         if 'page_override' not in st.session_state:
             st.session_state.page_override = None
+        if 'show_private_explanation' not in st.session_state:
+            st.session_state.show_private_explanation = False
         if 'advanced_settings' not in st.session_state:
             st.session_state.advanced_settings = {
                 'enable_gpu': False,
@@ -393,6 +395,22 @@ class AdvancedLithographyHotspotApp:
             parallel_processing = st.checkbox("Parallel Processing", value=True)
             cache_results = st.checkbox("Cache Results", value=True)
             save_intermediate = st.checkbox("Save Intermediate Results", value=False)
+        
+        # Discreet admin access (hidden at bottom)
+        st.sidebar.markdown("---")
+        if st.sidebar.button("🔧", help="Developer tools"):
+            # Import the private explanation page
+            try:
+                import sys
+                import os
+                sys.path.append(os.path.join(os.path.dirname(__file__), 'pages'))
+                from private_code_explanation import show_private_code_explanation
+                
+                # Clear current page and show private explanation
+                st.session_state.show_private_explanation = True
+                st.rerun()
+            except ImportError:
+                st.sidebar.error("Private module not found")
         
         return {
             'page_mode': page_mode,
@@ -1180,6 +1198,20 @@ class AdvancedLithographyHotspotApp:
     def run(self):
         """Main application entry point"""
         try:
+            # Check for private explanation mode
+            if st.session_state.get('show_private_explanation', False):
+                try:
+                    import sys
+                    import os
+                    sys.path.append(os.path.join(os.path.dirname(__file__), 'pages'))
+                    from private_code_explanation import show_private_code_explanation
+                    show_private_code_explanation()
+                    return
+                except ImportError:
+                    st.error("Private module not available")
+                    st.session_state.show_private_explanation = False
+                    st.rerun()
+            
             if not self.models_loaded:
                 st.error("❌ Models not loaded. Please check your configuration and try again.")
                 return
