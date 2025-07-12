@@ -26,6 +26,12 @@ from pathlib import Path
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import multiprocessing as mp
+import traceback
+import sys
+
+# Set up logging for debugging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Import advanced modules
 try:
@@ -404,7 +410,7 @@ class AdvancedLithographyHotspotApp:
                 import sys
                 import os
                 sys.path.append(os.path.join(os.path.dirname(__file__), 'pages'))
-                from private_code_explanation import show_private_code_explanation
+                from pages.private_code_explanation import show_private_code_explanation
                 
                 # Clear current page and show private explanation
                 st.session_state.show_private_explanation = True
@@ -924,7 +930,7 @@ class AdvancedLithographyHotspotApp:
                                     y=feature_values,
                                     title=f"{category.title()} Features"
                                 )
-                                fig.update_xaxis(tickangle=45)
+                                fig.update_xaxes(tickangle=45)
                                 st.plotly_chart(fig, use_container_width=True)
                             else:  # Show as table
                                 feature_df = pd.DataFrame({
@@ -1031,12 +1037,35 @@ class AdvancedLithographyHotspotApp:
             
             # Convert uploaded files to PIL Images
             images = []
-            for uploaded_file in config['uploaded_files']:
+            logger.info(f"Processing {len(config['uploaded_files'])} uploaded files")
+            
+            for i, uploaded_file in enumerate(config['uploaded_files']):
                 try:
-                    image = Image.open(uploaded_file)
+                    logger.info(f"Processing file {i+1}: {uploaded_file.name}")
+                    
+                    # Ensure we use PIL.Image explicitly to avoid variable shadowing
+                    from PIL import Image as PILImage
+                    logger.info(f"PIL Image import successful for file {uploaded_file.name}")
+                    
+                    # Load the image
+                    image = PILImage.open(uploaded_file)
+                    logger.info(f"Successfully opened image: {uploaded_file.name}, size: {image.size}")
+                    
                     images.append(image)
+                    
                 except Exception as e:
-                    st.error(f"Error loading {uploaded_file.name}: {e}")
+                    error_msg = f"Error loading {uploaded_file.name}: {e}"
+                    st.error(error_msg)
+                    logger.error(error_msg)
+                    
+                    # Log the full error for debugging
+                    st.error(f"Full error details: {str(e)}")
+                    st.error(f"Error type: {type(e).__name__}")
+                    
+                    import traceback
+                    traceback_str = traceback.format_exc()
+                    st.error(f"Traceback: {traceback_str}")
+                    logger.error(f"Full traceback for {uploaded_file.name}: {traceback_str}")
             
             if images:
                 # Process images
@@ -1129,9 +1158,9 @@ class AdvancedLithographyHotspotApp:
                     # Show some example patterns
                     example_images = []
                     try:
-                        # Generate a quick example
-                        from PIL import Image, ImageDraw
-                        img = Image.new('RGB', (200, 200), 'black')
+                        # Generate a quick example - use explicit PIL imports to avoid shadowing
+                        from PIL import Image as PILImage, ImageDraw
+                        img = PILImage.new('RGB', (200, 200), 'black')
                         draw = ImageDraw.Draw(img)
                         for i in range(0, 200, 20):
                             draw.line([(i, 0), (i, 200)], fill='white', width=1)
@@ -1204,7 +1233,7 @@ class AdvancedLithographyHotspotApp:
                     import sys
                     import os
                     sys.path.append(os.path.join(os.path.dirname(__file__), 'pages'))
-                    from private_code_explanation import show_private_code_explanation
+                    from pages.private_code_explanation import show_private_code_explanation
                     show_private_code_explanation()
                     return
                 except ImportError:
@@ -1231,13 +1260,27 @@ class AdvancedLithographyHotspotApp:
             logging.error(f"Application error: {e}")
 
 def main():
-    """Main entry point"""
+    """Main entry point with comprehensive error handling"""
     try:
+        # Test PIL import first
+        try:
+            from PIL import Image as TestImage
+            logger.info("PIL Image import successful")
+        except Exception as pil_error:
+            st.error(f"❌ PIL Import Error: {pil_error}")
+            logger.error(f"PIL import failed: {pil_error}")
+            return
+        
+        # Initialize and run app
         app = AdvancedLithographyHotspotApp()
         app.run()
+        
     except Exception as e:
         st.error(f"❌ Failed to initialize application: {str(e)}")
-        logging.error(f"Initialization error: {e}")
+        st.error(f"🔍 Error type: {type(e).__name__}")
+        st.error(f"📍 Traceback: {traceback.format_exc()}")
+        logger.error(f"Initialization error: {e}")
+        logger.error(f"Full traceback: {traceback.format_exc()}")
 
 if __name__ == "__main__":
     main()
