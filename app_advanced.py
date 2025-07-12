@@ -49,6 +49,8 @@ except ImportError as e:
 # Enhanced fallback models - provide realistic demo functionality
 if not CONFIG_AVAILABLE:
     import random
+    import io
+    import hashlib
     from PIL import ImageDraw, ImageFilter, ImageEnhance
     import numpy as np
     
@@ -1073,7 +1075,7 @@ class AdvancedLithographyHotspotApp:
                     visualization_result = gradcam.generate_visualization(adapted_image)
             
             # Feature extraction
-            features = processor.extract_advanced_features(processed_image) if CONFIG_AVAILABLE else {}
+            features = processor.extract_advanced_features(processed_image)
             
             # Compile results
             result = {
@@ -1204,6 +1206,9 @@ class AdvancedLithographyHotspotApp:
                 if result.get('visualization') and config['visualization']['enable_gradcam']:
                     viz = result['visualization']
                     
+                    st.markdown("### 🔍 Grad-CAM Visualizations")
+                    st.info("🎯 **Demo Mode**: Showing simulated AI attention heatmaps")
+                    
                     # Display different visualization modes
                     available_modes = viz.get('visualizations', {})
                     
@@ -1215,32 +1220,71 @@ class AdvancedLithographyHotspotApp:
                             key=f"viz_modes_{i}"
                         )
                         
-                        # Display selected visualizations
-                        cols = st.columns(min(len(selected_modes), 3))
-                        for j, mode in enumerate(selected_modes):
-                            with cols[j % 3]:
-                                st.markdown(f"**{mode.replace('_', ' ').title()}**")
-                                st.image(available_modes[mode], use_column_width=True)
+                        if selected_modes:
+                            # Display selected visualizations
+                            cols = st.columns(min(len(selected_modes), 3))
+                            for j, mode in enumerate(selected_modes):
+                                with cols[j % 3]:
+                                    st.markdown(f"**{mode.replace('_', ' ').title()}**")
+                                    st.image(available_modes[mode], use_column_width=True)
+                                    
+                                    # Add mode description
+                                    if mode == 'heatmap_overlay':
+                                        st.caption("🔥 Combined original image with attention heatmap")
+                                    elif mode == 'pure_heatmap':
+                                        st.caption("🌡️ Pure attention map showing AI focus areas")
+                                    elif mode == 'attention_analysis':
+                                        st.caption("📊 Statistical analysis of attention patterns")
+                        else:
+                            st.info("Select visualization modes above to display")
                     
                     # Attention analysis
-                    if 'attention_map' in viz:
-                        st.markdown("**Attention Analysis**")
-                        attention_analysis = result['visualization'].get('attention_analysis', {})
-                        if attention_analysis:
-                            analysis_df = pd.DataFrame([attention_analysis]).T
-                            analysis_df.columns = ['Value']
-                            st.dataframe(analysis_df)
+                    attention_analysis = viz.get('visualizations', {}).get('attention_analysis')
+                    if attention_analysis:
+                        st.markdown("### 📊 Attention Analysis")
+                        
+                        col1, col2, col3 = st.columns(3)
+                        with col1:
+                            st.metric(
+                                "Max Attention", 
+                                f"{attention_analysis.get('max_attention', 0):.3f}",
+                                help="Highest attention value in the image"
+                            )
+                        with col2:
+                            st.metric(
+                                "Attention Regions", 
+                                attention_analysis.get('attention_regions', 0),
+                                help="Number of distinct attention areas detected"
+                            )
+                        with col3:
+                            st.metric(
+                                "Coverage", 
+                                f"{attention_analysis.get('coverage_percentage', 0):.1f}%",
+                                help="Percentage of image covered by attention"
+                            )
                 else:
-                    st.info("Grad-CAM visualization not available for this result")
+                    st.info("🔧 **Grad-CAM Visualization**")
+                    st.markdown("""
+                    **Enable Grad-CAM in the sidebar** to see:
+                    - 🔥 Attention heatmap overlays
+                    - 🌡️ Pure attention maps  
+                    - 📊 Attention analysis metrics
+                    - 🎨 Multiple colormap options (jet, hot, viridis, etc.)
+                    
+                    These visualizations show where the AI model focuses when making predictions!
+                    """)
             
             with tabs[3]:  # Features
-                if result.get('features'):
+                if result.get('features') and result['features']:
                     features = result['features']
+                    
+                    st.markdown("### 📊 Extracted Image Features")
+                    st.info("🔍 **Demo Mode**: Showing simulated advanced feature extraction results")
                     
                     # Display feature categories
                     for category, feature_dict in features.items():
-                        if isinstance(feature_dict, dict):
-                            st.markdown(f"**{category.title()} Features**")
+                        if isinstance(feature_dict, dict) and feature_dict:
+                            st.markdown(f"**{category.replace('_', ' ').title()}**")
                             
                             # Create feature visualization
                             feature_names = list(feature_dict.keys())
@@ -1250,18 +1294,38 @@ class AdvancedLithographyHotspotApp:
                                 fig = px.bar(
                                     x=feature_names,
                                     y=feature_values,
-                                    title=f"{category.title()} Features"
+                                    title=f"{category.replace('_', ' ').title()} Analysis",
+                                    labels={'x': 'Feature', 'y': 'Value'}
                                 )
                                 fig.update_xaxes(tickangle=45)
+                                fig.update_layout(height=400)
                                 st.plotly_chart(fig, use_container_width=True)
                             else:  # Show as table
                                 feature_df = pd.DataFrame({
-                                    'Feature': feature_names,
-                                    'Value': feature_values
+                                    'Feature': [name.replace('_', ' ').title() for name in feature_names],
+                                    'Value': [f"{val:.4f}" if isinstance(val, float) else str(val) for val in feature_values]
                                 })
-                                st.dataframe(feature_df)
+                                st.dataframe(feature_df, use_container_width=True)
+                            
+                            # Add interpretation
+                            if category == 'texture_features':
+                                st.caption("🔍 Texture features analyze surface patterns and roughness characteristics")
+                            elif category == 'statistical_features':
+                                st.caption("📊 Statistical features describe intensity distribution and moments")
+                            elif category == 'geometric_features':
+                                st.caption("📐 Geometric features identify edges, corners, and structural elements")
+                            
+                            st.markdown("---")
                 else:
-                    st.info("Advanced features not available")
+                    st.info("🔧 **Demo Mode**: Advanced feature extraction simulation")
+                    st.markdown("""
+                    **Available in Demo Mode:**
+                    - Texture Analysis (contrast, homogeneity, entropy)
+                    - Statistical Metrics (mean, std, skewness, kurtosis)
+                    - Geometric Features (edges, corners, line segments)
+                    
+                    Upload an image to see detailed feature extraction results!
+                    """)
             
             with tabs[4]:  # Metadata
                 metadata = {
