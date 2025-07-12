@@ -34,6 +34,7 @@ try:
     from classifier_advanced import get_hotspot_classifier
     from gradcam_advanced import get_gradcam_visualizer
     from image_processing_advanced import get_image_processor
+    from test_image_generator_advanced import create_test_image_generator_ui
     CONFIG_AVAILABLE = True
 except ImportError as e:
     logging.warning(f"Advanced modules import failed: {e}. Using fallback implementation.")
@@ -43,6 +44,7 @@ except ImportError as e:
 if not CONFIG_AVAILABLE:
     from models import CycleGANProcessor, HotspotClassifier, GradCAMVisualizer
     from utils import ImageProcessor
+    from test_image_generator_basic import create_basic_test_image_generator
 
 # Configure logging
 logging.basicConfig(
@@ -198,6 +200,8 @@ class AdvancedLithographyHotspotApp:
             st.session_state.processing_history = []
         if 'model_cache' not in st.session_state:
             st.session_state.model_cache = {}
+        if 'page_override' not in st.session_state:
+            st.session_state.page_override = None
         if 'advanced_settings' not in st.session_state:
             st.session_state.advanced_settings = {
                 'enable_gpu': False,
@@ -272,13 +276,18 @@ class AdvancedLithographyHotspotApp:
         """Render advanced sidebar with comprehensive controls"""
         st.sidebar.markdown("## 🚀 Advanced Control Panel")
         
-        # Navigation
-        page_mode = st.sidebar.radio(
-            "Navigation",
-            ["🔬 Main App", "📊 Analytics Dashboard", "⚙️ Model Management", "📋 About & Info"],
-            index=0,
-            help="Navigate between different application modes"
-        )
+        # Check for page override
+        if st.session_state.page_override:
+            page_mode = st.session_state.page_override
+            st.session_state.page_override = None  # Clear override
+        else:
+            # Navigation
+            page_mode = st.sidebar.radio(
+                "Navigation",
+                ["🔬 Main App", "📊 Analytics Dashboard", "⚙️ Model Management", "🎨 Test Image Generator", "📋 About & Info"],
+                index=0,
+                help="Navigate between different application modes"
+            )
         
         if page_mode != "🔬 Main App":
             return {'page_mode': page_mode}
@@ -945,6 +954,11 @@ class AdvancedLithographyHotspotApp:
                 self.render_analytics_dashboard()
             elif config['page_mode'] == "⚙️ Model Management":
                 self.render_model_management()
+            elif config['page_mode'] == "🎨 Test Image Generator":
+                if CONFIG_AVAILABLE:
+                    create_test_image_generator_ui()
+                else:
+                    create_basic_test_image_generator()
             elif config['page_mode'] == "📋 About & Info":
                 try:
                     from pages.about import show_about_page
@@ -1070,6 +1084,42 @@ class AdvancedLithographyHotspotApp:
                 - Grad-CAM explanations
                 - Performance analytics
                 """)
+            
+            # Test image generation section
+            st.markdown("### 🎨 Need Test Images?")
+            st.markdown("Generate high-quality test images for evaluation and testing purposes.")
+            
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                if st.button("🎨 Advanced Generator", key="advanced_gen"):
+                    st.session_state.page_override = "🎨 Test Image Generator"
+                    st.rerun()
+            
+            with col2:
+                if st.button("📥 Download Samples", key="download_samples"):
+                    st.info("Navigate to About & Info page to download pre-generated test images.")
+            
+            with col3:
+                if st.button("📚 View Examples", key="view_examples"):
+                    # Show some example patterns
+                    example_images = []
+                    try:
+                        # Generate a quick example
+                        from PIL import Image, ImageDraw
+                        img = Image.new('RGB', (200, 200), 'black')
+                        draw = ImageDraw.Draw(img)
+                        for i in range(0, 200, 20):
+                            draw.line([(i, 0), (i, 200)], fill='white', width=1)
+                            draw.line([(0, i), (200, i)], fill='white', width=1)
+                        # Add a simulated hotspot
+                        draw.ellipse([90, 90, 110, 110], fill='red', outline='yellow')
+                        
+                        st.image(img, caption="Example: Grid pattern with hotspot", width=200)
+                    except Exception as e:
+                        st.error(f"Could not generate example: {e}")
+            
+            st.markdown("---")
     
     def render_footer(self):
         """Render application footer"""
