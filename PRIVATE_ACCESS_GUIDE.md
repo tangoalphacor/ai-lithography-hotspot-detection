@@ -15,7 +15,7 @@ Your comprehensive code explanation and defense guide is now built into your Str
 
 3. **Click the small 🔧 button** at the very bottom of the sidebar
 
-4. **Enter the admin password:** `lithography_admin_2025`
+4. **Enter the admin password:** `Guide@2025`
 
 5. **Access your complete technical documentation** with 5 tabs:
    - 🧠 **AI Models** - Deep explanations of ResNet, ViT, EfficientNet, CycleGAN
@@ -57,7 +57,7 @@ Your comprehensive code explanation and defense guide is now built into your Str
 
 To change the admin password, edit line 12 in `pages/private_code_explanation.py`:
 ```python
-if password == "YOUR_NEW_PASSWORD_HERE":
+if password == "Guide@2025":  # Change to your preferred password
 ```
 
 ---

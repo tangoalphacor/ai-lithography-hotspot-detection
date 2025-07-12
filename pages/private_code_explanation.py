@@ -8,7 +8,7 @@ def show_private_code_explanation():
     if not st.session_state.get('admin_mode', False):
         # Simple password protection
         password = st.text_input("Enter admin password:", type="password")
-        if password == "lithography_admin_2025":  # Change this to your preferred password
+        if password == "Guide@2025":  # Change this to your preferred password
             st.session_state.admin_mode = True
             st.rerun()
         else:
