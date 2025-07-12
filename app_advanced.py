@@ -284,7 +284,7 @@ class AdvancedLithographyHotspotApp:
             # Navigation
             page_mode = st.sidebar.radio(
                 "Navigation",
-                ["🔬 Main App", "📊 Analytics Dashboard", "⚙️ Model Management", "🎨 Test Image Generator", "📋 About & Info"],
+                ["🔬 Main App", "📊 Analytics Dashboard", "⚙️ Model Management", "🎨 Test Image Generator", "� Setup Guide", "�📋 About & Info"],
                 index=0,
                 help="Navigate between different application modes"
             )
@@ -959,7 +959,13 @@ class AdvancedLithographyHotspotApp:
                     create_test_image_generator_ui()
                 else:
                     create_basic_test_image_generator()
-            elif config['page_mode'] == "📋 About & Info":
+            elif config['page_mode'] == "� Setup Guide":
+                try:
+                    from pages.setup_guide import show_setup_guide
+                    show_setup_guide()
+                except ImportError:
+                    st.error("Setup guide page not found")
+            elif config['page_mode'] == "�📋 About & Info":
                 try:
                     from pages.about import show_about_page
                     show_about_page()
@@ -1118,6 +1124,34 @@ class AdvancedLithographyHotspotApp:
                         st.image(img, caption="Example: Grid pattern with hotspot", width=200)
                     except Exception as e:
                         st.error(f"Could not generate example: {e}")
+            
+            st.markdown("---")
+            
+            # Quick access section
+            st.markdown("### 🚀 Quick Access")
+            st.markdown("Jump to different sections of the application for setup, help, and information.")
+            
+            quick_col1, quick_col2, quick_col3, quick_col4 = st.columns(4)
+            
+            with quick_col1:
+                if st.button("📚 Setup Guide", key="setup_guide_access"):
+                    st.session_state.page_override = "📚 Setup Guide"
+                    st.rerun()
+            
+            with quick_col2:
+                if st.button("📊 Analytics", key="analytics_access"):
+                    st.session_state.page_override = "📊 Analytics Dashboard"
+                    st.rerun()
+            
+            with quick_col3:
+                if st.button("⚙️ Models", key="models_access"):
+                    st.session_state.page_override = "⚙️ Model Management"
+                    st.rerun()
+            
+            with quick_col4:
+                if st.button("📋 About", key="about_access"):
+                    st.session_state.page_override = "📋 About & Info"
+                    st.rerun()
             
             st.markdown("---")
     
